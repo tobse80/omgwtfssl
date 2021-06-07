@@ -23,6 +23,8 @@ export SSL_SUBJECT=${SSL_SUBJECT:-"example.com"}
 export SSL_DNS=${SSL_DNS}
 export SSL_IP=${SSL_IP}
 
+export DH_KEY=${DH_KEY:-"dhparam.pem"}
+
 export K8S_NAME=${K8S_NAME:-"omgwtfssl"}
 export K8S_NAMESPACE=${K8S_NAMESPACE:-"default"}
 export K8S_SAVE_CA_KEY=${K8S_SAVE_CA_KEY}
@@ -128,6 +130,14 @@ openssl req -new -key ${SSL_KEY} -out ${SSL_CSR} -subj "/CN=${SSL_SUBJECT}" -con
 [[ -z $SILENT ]] && echo "====> Generating new SSL CERT ${SSL_CERT}"
 openssl x509 -req -in ${SSL_CSR} -CA ${CA_CERT} -CAkey ${CA_KEY} -CAcreateserial -out ${SSL_CERT} \
     -days ${SSL_EXPIRE} -extensions v3_req -extfile ${SSL_CONFIG} > /dev/null || exit 1
+
+# create Diffie-Hellman key
+if [[ -e ./${DH_KEY} ]]; then
+    [[ -z $SILENT ]] && echo "====> Using existing Diffie-Hellman key ${DH_KEY}"
+else
+    [[ -z $SILENT ]] && echo "====> Generating new Diffie-Hellman key ${DH_KEY}"
+    openssl dhparam -dsaparam -out ${DH_KEY} ${SSL_SIZE} > /dev/null || exit 1
+fi
 
 # create k8s secret file
 cat << EOM > /certs/secret.yaml
