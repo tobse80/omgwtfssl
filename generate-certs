@@ -75,27 +75,31 @@ authorityKeyIdentifier = keyid:always,issuer:always
 basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = clientAuth, serverAuth
-EOM
-
-if [[ -n ${SSL_DNS} || -n ${SSL_IP} ]]; then
-    cat >> ${SSL_CONFIG} <<EOM
 subjectAltName = @alt_names
 [alt_names]
 EOM
 
-    IFS=","
+IFS=","
+if [[ -n ${SSL_DNS} ]]; then
     dns=(${SSL_DNS})
     dns+=(${SSL_SUBJECT})
-    for i in "${!dns[@]}"; do
-      echo DNS.$((i+1)) = ${dns[$i]} >> ${SSL_CONFIG}
-    done
+else
+    dns=(${SSL_SUBJECT})
+fi
+for i in "${!dns[@]}"; do
+    echo DNS.$((i+1)) = ${dns[$i]} >> ${SSL_CONFIG}
+done
 
-    if [[ -n ${SSL_IP} ]]; then
-        ip=(${SSL_IP})
-        for i in "${!ip[@]}"; do
-          echo IP.$((i+1)) = ${ip[$i]} >> ${SSL_CONFIG}
-        done
-    fi
+if [[ -n ${SSL_IP} ]]; then
+    ip=(${SSL_IP})
+    for i in "${!ip[@]}"; do
+        echo IP.$((i+1)) = ${ip[$i]} >> ${SSL_CONFIG}
+    done
+fi
+
+if [[ -z $SILENT ]]; then
+    echo "--> SSL_CONFIG"
+    cat ${SSL_CONFIG} | sed 's/^/  /'
 fi
 
 
